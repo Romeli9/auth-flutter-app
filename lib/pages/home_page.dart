@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
-
+import 'package:untitled2/pages/profile_tab.dart';
+import 'package:untitled2/pages/menu_tab.dart';
+import 'package:untitled2/pages/messanger_tab.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,15 +15,15 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    MenuTab(),
-    MessengerTab(),
     ProfileTab(),
+    MenuTab(),
+    MessengerTab()
   ];
 
   final Map<String, Icon> _navigationItems = {
-    'Menu': Platform.isIOS ? Icon(CupertinoIcons.house_fill) : Icon(Icons.home),
-    'Messenger': Icon(Icons.message),
     'Profile': Icon(Icons.person),
+    'Menu': Platform.isIOS ? Icon(CupertinoIcons.house_fill) : Icon(Icons.home),
+    'Messenger': Icon(Icons.message)
   };
 
   void _loadScreen() {
@@ -92,41 +94,6 @@ class TabContent extends StatelessWidget {
   }
 }
 
-class ProfileTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final email = user?.email ?? 'No email';
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 50.0,
-            backgroundImage: NetworkImage(
-                'https://i.pravatar.cc/150'),
-            backgroundColor: Colors.transparent,
-          ),
-          SizedBox(height: 20.0),
-          Text('Email: $email', style: TextStyle(fontSize: 18.0)),
-        ],
-      ),
-    );
-  }
-}
 
 
-class MessengerTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Text("This is Messenger");
-  }
-}
 
-class MenuTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Text("This is Menu");
-  }
-}
