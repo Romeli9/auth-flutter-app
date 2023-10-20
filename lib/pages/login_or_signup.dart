@@ -13,15 +13,11 @@ class LoginAndSignUp extends StatefulWidget {
 
   bool islogin = true;
 
-
-
   void togglePage(){
     setState(() {
       islogin=!islogin;
     });
   }
-
-
 
   @override
     Widget build(BuildContext context){
@@ -34,6 +30,5 @@ class LoginAndSignUp extends StatefulWidget {
         onPressed: togglePage,
       );
     }
-
   }
   }

@@ -44,38 +44,38 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDO8Dy33djq5gCcvkDH0DZAMiCJKmt_pe0',
-    appId: '1:342733035145:web:4006e170d0da06a38e1858',
-    messagingSenderId: '342733035145',
-    projectId: 'auth-3884d',
-    authDomain: 'auth-3884d.firebaseapp.com',
-    storageBucket: 'auth-3884d.appspot.com',
-    measurementId: 'G-TFYBPSFP72',
+    apiKey: 'AIzaSyDoNZsMzHjaqvNWa1HjMxeISn3Mksx6ZIo',
+    appId: '1:63417815638:web:40cdfb1dc7eca04ae861f7',
+    messagingSenderId: '63417815638',
+    projectId: 'team-it-e6c00',
+    authDomain: 'team-it-e6c00.firebaseapp.com',
+    storageBucket: 'team-it-e6c00.appspot.com',
+    measurementId: 'G-TTDP197B9F',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAx_uixnSlYQRn7Hb16D_NR-dQXEfCG5W8',
-    appId: '1:342733035145:android:1c79d9446f55ff828e1858',
-    messagingSenderId: '342733035145',
-    projectId: 'auth-3884d',
-    storageBucket: 'auth-3884d.appspot.com',
+    apiKey: 'AIzaSyDnta9an-MGC_-UQ21g2sa6Pq7YhpzaBL4',
+    appId: '1:63417815638:android:c6a6ea773f45ad02e861f7',
+    messagingSenderId: '63417815638',
+    projectId: 'team-it-e6c00',
+    storageBucket: 'team-it-e6c00.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDb2AgH6FPXHm-sqPGJmcoCHTlnY4ExZlQ',
-    appId: '1:342733035145:ios:08ec5015e898013f8e1858',
-    messagingSenderId: '342733035145',
-    projectId: 'auth-3884d',
-    storageBucket: 'auth-3884d.appspot.com',
+    apiKey: 'AIzaSyCbBSHZ13_N47FzvZMOzbBKj77LsQYgO3A',
+    appId: '1:63417815638:ios:8a35c375dae3d6a7e861f7',
+    messagingSenderId: '63417815638',
+    projectId: 'team-it-e6c00',
+    storageBucket: 'team-it-e6c00.appspot.com',
     iosBundleId: 'com.example.untitled2',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDb2AgH6FPXHm-sqPGJmcoCHTlnY4ExZlQ',
-    appId: '1:342733035145:ios:60dcdf7347a64c548e1858',
-    messagingSenderId: '342733035145',
-    projectId: 'auth-3884d',
-    storageBucket: 'auth-3884d.appspot.com',
+    apiKey: 'AIzaSyCbBSHZ13_N47FzvZMOzbBKj77LsQYgO3A',
+    appId: '1:63417815638:ios:5e03eeb3f56dba71e861f7',
+    messagingSenderId: '63417815638',
+    projectId: 'team-it-e6c00',
+    storageBucket: 'team-it-e6c00.appspot.com',
     iosBundleId: 'com.example.untitled2.RunnerTests',
   );
 }
