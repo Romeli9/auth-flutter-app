@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:untitled2/class_user.dart';
 
@@ -32,8 +33,12 @@ class _SignUpPageState extends State<SignUp> {
         password: _password.text,
       );
 
-      // Save user data, including username, in Firestore
-      final user = Users(email: _email.text, username: _username.text);
+      // Get the download URL for "no_avatar.png" from Firebase Storage
+      final storageRef = FirebaseStorage.instance.ref().child('avatars/no-avatar.png');
+      final downloadURL = await storageRef.getDownloadURL();
+
+      // Save user data, including username and image URL, in Firestore
+      final user = Users(email: _email.text, username: _username.text, image: downloadURL);
       await FirebaseFirestore.instance.collection('users').doc(_email.text).set(user.toJson());
 
       setState(() {

@@ -12,6 +12,7 @@ class MenuTab extends StatefulWidget {
 
 class _MenuTabState extends State<MenuTab> {
   String username = '';
+  String avatarURL = '';
   User? user;
   final _projectNameController = TextEditingController();
   final _projectDescriptionController = TextEditingController();
@@ -24,6 +25,9 @@ class _MenuTabState extends State<MenuTab> {
   // Sample values for Требуется and Категории
   List<String> sampleCriteria = ['Критерий 1', 'Критерий 2', 'Критерий 3'];
   List<String> sampleCategories = ['Категория 1', 'Категория 2', 'Категория 3'];
+
+  List<ProjectWidget> myProjects = [];
+  List<ProjectWidget> otherProjects = [];
 
   @override
   void initState() {
@@ -38,55 +42,131 @@ class _MenuTabState extends State<MenuTab> {
       if (documentSnapshot.exists) {
         final data = documentSnapshot.data() as Map<String, dynamic>;
         final userUsername = data['username'];
+        final userAvatar = data['avatar'];
         setState(() {
           username = userUsername;
+          avatarURL = userAvatar;
         });
       }
     });
+    // Загрузите "Мои проекты"
+    loadMyProjects();
+
+    // Загрузите "Другие проекты"
+    loadOtherProjects();
+
   }
+
+  Future<String?> loadUserData() async {
+    final currentUserEmail = user?.email;
+
+    final userSnapshot = await FirebaseFirestore.instance.collection('users').doc(currentUserEmail).get();
+    if (userSnapshot.exists) {
+      final userData = userSnapshot.data() as Map<String, dynamic>;
+      final userUsername = userData['username'];
+      return userUsername;
+    }
+    return null; // Возвращаем null, если не удалось получить username.
+  }
+
+  Future<void> loadMyProjects() async {
+    await loadUserData();
+
+    final myProjectsSnapshot = await FirebaseFirestore.instance
+        .collection('projects')
+        .where('creator', isEqualTo: username)
+        .get();
+
+    for (var projectDoc in myProjectsSnapshot.docs) {
+      final data = projectDoc.data();
+      final projectWidget = ProjectWidget.fromData(data);
+      setState(() {
+        myProjects.add(projectWidget);
+      });
+    }
+    }
+
+  Future<void> loadOtherProjects() async {
+    await loadUserData();
+
+    final otherProjectsSnapshot = await FirebaseFirestore.instance
+        .collection('projects')
+        .where('creator', isNotEqualTo: username)
+        .get();
+
+    // Очистка списка otherProjects перед добавлением новых данных
+    setState(() {
+      otherProjects.clear();
+    });
+
+    for (var projectDoc in otherProjectsSnapshot.docs) {
+      final data = projectDoc.data();
+      final projectWidget = ProjectWidget(
+        projectName: data['name'],
+        projectDescription: data['description'],
+        projectAvatarUrl: data['avatarUrl'],
+        creator: data['creator'],
+        criteria: List<String>.from(data['criteria']),
+        categories: List<String>.from(data['categories']),
+      );
+      setState(() {
+        otherProjects.add(projectWidget);
+      });
+    }
+    }
+
+
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.all(20.0),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 30.0,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150'),
-                backgroundColor: Colors.transparent,
-              ),
-              SizedBox(width: 10.0),
-              Text(
-                'Добро пожаловать, $username!',
-                style: TextStyle(fontSize: 18.0),
-              ),
-            ],
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 30.0,
+                  backgroundImage: NetworkImage(avatarURL),
+                  backgroundColor: Colors.transparent,
+                ),
+                SizedBox(width: 10.0),
+                Text(
+                  'Добро пожаловать, $username!',
+                  style: TextStyle(fontSize: 18.0),
+                ),
+              ],
+            ),
           ),
-        ),
-        SizedBox(height: 20.0),
-        Text(
-          'Ваши проекты',
-          style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            _showCreateProjectDialog();
-          },
-          child: Text('+'),
-        ),
-        SizedBox(height: 20.0),
-        Expanded(
-          child: ListView(
-            children: projects,
+          SizedBox(height: 20.0),
+          Text(
+            'Ваши проекты',
+            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
           ),
-        ),
-      ],
+          Column(
+            children: myProjects,
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _showCreateProjectDialog();
+            },
+            child: Text('+'),
+          ),
+          SizedBox(height: 20.0),
+          Text(
+            'Другие проекты',
+            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+          ),
+          Column(
+            children: otherProjects,
+          ),
+        ],
+      ),
     );
   }
+
 
   Future<void> _showCreateProjectDialog() async {
     List<String> selectedCriteria = [];
@@ -102,6 +182,19 @@ class _MenuTabState extends State<MenuTab> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
+                  ElevatedButton(
+                    onPressed: () async {
+                      final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
+
+                      if (pickedImage != null) {
+                        setState(() {
+                          _projectImage = File(pickedImage.path);
+                        });
+                      }
+                    },
+                    child: Text('Выбрать изображение'),
+                  ),
+
                   TextField(
                     controller: _projectNameController,
                     decoration: InputDecoration(labelText: 'Название проекта'),
@@ -159,11 +252,17 @@ class _MenuTabState extends State<MenuTab> {
                     ],
                   ),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       criteria = selectedCriteria;
                       categories = selectedCategories;
-                      final url = 'https://i.pravatar.cc/200';
-                      createProject(_projectNameController.text, _projectDescriptionController.text, url, criteria, categories);
+                      if (_projectImage != null) {
+                        final storageRef = FirebaseStorage.instance.ref().child('project_avatar/${DateTime.now()}.jpg');
+                        await storageRef.putFile(_projectImage!);
+
+                        // Получите URL загруженного изображения
+                        imageUrl = await storageRef.getDownloadURL();
+                      }
+                      createProject(_projectNameController.text, _projectDescriptionController.text, imageUrl, criteria, categories);
                       Navigator.of(context).pop();
                     },
                     child: Text('Создать проект'),
@@ -233,6 +332,7 @@ class _MenuTabState extends State<MenuTab> {
       projectAvatarUrl: imageUrl,
       criteria: criteria,
       categories: categories,
+      creator: username,
     );
     setState(() {
       projects.add(newProject);
@@ -245,6 +345,7 @@ class _MenuTabState extends State<MenuTab> {
       'avatarUrl': imageUrl,
       'criteria': criteria,
       'categories': categories,
+      'creator': username,
     });
   }
 }
@@ -255,6 +356,7 @@ class ProjectWidget extends StatelessWidget {
   final String projectAvatarUrl;
   final List<String> criteria;
   final List<String> categories;
+  final String creator;
 
   ProjectWidget({
     required this.projectName,
@@ -262,7 +364,19 @@ class ProjectWidget extends StatelessWidget {
     required this.projectAvatarUrl,
     required this.criteria,
     required this.categories,
+    required this.creator,
   });
+
+  static ProjectWidget fromData(Map<String, dynamic> data) {
+    return ProjectWidget(
+      projectName: data['name'],
+      projectDescription: data['description'],
+      projectAvatarUrl: data['avatarUrl'],
+      criteria: List<String>.from(data['criteria']),
+      categories: List<String>.from(data['categories']),
+      creator: data['creator'],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -271,7 +385,12 @@ class ProjectWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.network(projectAvatarUrl),
+          CircleAvatar(
+            radius: 50.0,
+            backgroundImage: NetworkImage(projectAvatarUrl),
+            backgroundColor: Colors.transparent,
+          ),
+          Text('Creator: $creator'),
           ListTile(
             title: Text(projectName),
             subtitle: Text(projectDescription),
