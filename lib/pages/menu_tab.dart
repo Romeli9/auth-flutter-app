@@ -11,7 +11,6 @@ class MenuTab extends StatefulWidget {
 }
 
 class _MenuTabState extends State<MenuTab> {
-  String username = '';
   String avatarURL = '';
   User? user;
   final _projectNameController = TextEditingController();
@@ -29,32 +28,25 @@ class _MenuTabState extends State<MenuTab> {
   List<ProjectWidget> myProjects = [];
   List<ProjectWidget> otherProjects = [];
 
+  String username = ''; // Используйте значение по умолчанию
+
   @override
   void initState() {
     super.initState();
 
     user = FirebaseAuth.instance.currentUser;
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(user!.email)
-        .get()
-        .then((documentSnapshot) {
-      if (documentSnapshot.exists) {
-        final data = documentSnapshot.data() as Map<String, dynamic>;
-        final userUsername = data['username'];
-        final userAvatar = data['avatar'];
+    loadUserData().then((loadedUsername) async {
+      if (loadedUsername != null) {
         setState(() {
-          username = userUsername;
-          avatarURL = userAvatar;
+          username = loadedUsername;
         });
+        // Загрузите "Мои проекты"
+        await loadMyProjects();
+
+        // Загрузите "Другие проекты"
+        await loadOtherProjects();
       }
     });
-    // Загрузите "Мои проекты"
-    loadMyProjects();
-
-    // Загрузите "Другие проекты"
-    loadOtherProjects();
-
   }
 
   Future<String?> loadUserData() async {
@@ -94,25 +86,14 @@ class _MenuTabState extends State<MenuTab> {
         .where('creator', isNotEqualTo: username)
         .get();
 
-    // Очистка списка otherProjects перед добавлением новых данных
-    setState(() {
-      otherProjects.clear();
-    });
-
     for (var projectDoc in otherProjectsSnapshot.docs) {
       final data = projectDoc.data();
-      final projectWidget = ProjectWidget(
-        projectName: data['name'],
-        projectDescription: data['description'],
-        projectAvatarUrl: data['avatarUrl'],
-        creator: data['creator'],
-        criteria: List<String>.from(data['criteria']),
-        categories: List<String>.from(data['categories']),
-      );
+      final projectWidget = ProjectWidget.fromData(data);
       setState(() {
         otherProjects.add(projectWidget);
       });
     }
+
     }
 
 
@@ -326,28 +307,48 @@ class _MenuTabState extends State<MenuTab> {
 
   void createProject(String projectName, String projectDescription, String imageUrl, List<String> criteria, List<String> categories) {
     // Add the created project to the list and display it
-    final newProject = ProjectWidget(
-      projectName: projectName,
-      projectDescription: projectDescription,
-      projectAvatarUrl: imageUrl,
-      criteria: criteria,
-      categories: categories,
-      creator: username,
-    );
+    ProjectWidget? newProject;
+    newProject = ProjectWidget(
+        projectName: projectName,
+        projectAvatarUrl: imageUrl,
+        projectDescription: projectDescription,
+        criteria: criteria,
+        categories: categories,
+        creator: username,
+        onDelete: () {
+          // Удаление проекта из списка и Firestore по имени
+          deleteProjectByName(projectName);
+          setState(() {
+            projects.remove(newProject);
+            myProjects.remove(newProject); // Удалите из myProjects
+          });
+        });
     setState(() {
-      projects.add(newProject);
+      projects.add(newProject!);
+      myProjects.add(newProject); // Добавьте в myProjects
     });
 
-    // Save project data to Firestore or perform other actions as needed
     FirebaseFirestore.instance.collection('projects').add({
       'name': projectName,
       'description': projectDescription,
-      'avatarUrl': imageUrl,
       'criteria': criteria,
+      'avatarUrl': imageUrl,
       'categories': categories,
       'creator': username,
     });
   }
+
+  void deleteProjectByName(String projectName) {
+    // Удаление проекта из Firestore по имени
+    FirebaseFirestore.instance.collection('projects').where('name', isEqualTo: projectName).get().then((querySnapshot) {
+      querySnapshot.docs.forEach((document) {
+        document.reference.delete();
+      });
+
+    });
+  }
+
+
 }
 
 class ProjectWidget extends StatelessWidget {
@@ -357,14 +358,16 @@ class ProjectWidget extends StatelessWidget {
   final List<String> criteria;
   final List<String> categories;
   final String creator;
+  final VoidCallback onDelete;
 
   ProjectWidget({
     required this.projectName,
     required this.projectDescription,
-    required this.projectAvatarUrl,
     required this.criteria,
     required this.categories,
+    required this.projectAvatarUrl,
     required this.creator,
+    required this.onDelete,
   });
 
   static ProjectWidget fromData(Map<String, dynamic> data) {
@@ -375,6 +378,7 @@ class ProjectWidget extends StatelessWidget {
       criteria: List<String>.from(data['criteria']),
       categories: List<String>.from(data['categories']),
       creator: data['creator'],
+      onDelete: () {  },
     );
   }
 
@@ -412,6 +416,12 @@ class ProjectWidget extends StatelessWidget {
                   label: Text(category),
                 ),
             ],
+          ),
+          ElevatedButton(
+            onPressed:(){
+              onDelete();
+            },
+            child: Text('Удалить'),
           ),
         ],
       ),
