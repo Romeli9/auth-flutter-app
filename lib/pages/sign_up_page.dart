@@ -22,7 +22,7 @@ class _SignUpPageState extends State<SignUp> {
   final TextEditingController _password = TextEditingController();
   final TextEditingController _username = TextEditingController();
 
-  createUserWithEmailAndPassword() async {
+  Future<void> createUserWithEmailAndPassword() async {
     try {
       setState(() {
         isLoading = true;
@@ -37,9 +37,8 @@ class _SignUpPageState extends State<SignUp> {
       final storageRef = FirebaseStorage.instance.ref().child('avatars/no-avatar.png');
       final downloadURL = await storageRef.getDownloadURL();
 
-      // Save user data, including username and image URL, in Firestore
-      final user = Users(email: _email.text, username: _username.text, image: downloadURL);
-      await FirebaseFirestore.instance.collection('users').doc(_email.text).set(user.toJson());
+      // Function to save user data in Firestore with retry
+      await saveUserDataWithRetry(downloadURL);
 
       setState(() {
         isLoading = false;
@@ -67,6 +66,27 @@ class _SignUpPageState extends State<SignUp> {
       }
     }
   }
+
+  // Function to save user data in Firestore with retry
+  Future<void> saveUserDataWithRetry(String downloadURL) async {
+    for (int i = 0; i < 5; i++) {
+      try {
+        final user = Users(email: _email.text, username: _username.text, image: downloadURL);
+        print('я начал');
+        await FirebaseFirestore.instance.collection('users').doc(_email.text).set(user.toJson());
+        print('я закончил');
+        return;
+      } catch (e) {
+        // Handle the error (e.g., log or show a message)
+        print('Error saving user data: $e');
+      }
+      // Add a delay before the next retry (you can adjust this as needed)
+      await Future.delayed(Duration(seconds: 1));
+    }
+    // Handle the case when all retries fail
+    print('Failed to save user data after 3 retries.');
+  }
+
 
   @override
   Widget build(BuildContext context) {

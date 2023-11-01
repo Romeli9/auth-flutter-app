@@ -11,6 +11,7 @@ class MenuTab extends StatefulWidget {
 }
 
 class _MenuTabState extends State<MenuTab> {
+  String username = '';
   String avatarURL = '';
   User? user;
   final _projectNameController = TextEditingController();
@@ -26,33 +27,34 @@ class _MenuTabState extends State<MenuTab> {
   List<String> sampleCategories = ['Категория 1', 'Категория 2', 'Категория 3'];
 
   List<ProjectWidget> myProjects = [];
-
   List<ProjectWidget> otherProjects = [];
-
-  String username = ''; // Используйте значение по умолчанию
 
   @override
   void initState() {
     super.initState();
 
     user = FirebaseAuth.instance.currentUser;
-    loadUserData().then((loadedUsername) async {
-      if (loadedUsername != null) {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.email)
+        .get()
+        .then((documentSnapshot) {
+      if (documentSnapshot.exists) {
+        final data = documentSnapshot.data() as Map<String, dynamic>;
+        final userUsername = data['username'];
+        final userAvatar = data['avatar'];
         setState(() {
-          username = loadedUsername;
+          username = userUsername;
+          avatarURL = userAvatar;
         });
-
-        otherProjects.add(createSampleProject());
-
-        // Загрузите "Мои проекты"
-        await loadMyProjects();
-
-        // Загрузите "Другие проекты"
-        await loadOtherProjects();
-
-
       }
     });
+    // Загрузите "Мои проекты"
+    loadMyProjects();
+
+    // Загрузите "Другие проекты"
+    loadOtherProjects();
+
   }
 
   Future<String?> loadUserData() async {
@@ -67,28 +69,6 @@ class _MenuTabState extends State<MenuTab> {
     return null; // Возвращаем null, если не удалось получить username.
   }
 
-  ProjectWidget createSampleProject() {
-    final projectName = 'Проект';
-    final projectDescription = 'Описание проекта';
-    final imageUrl = 'https://t3.ftcdn.net/jpg/05/16/27/58/240_F_516275801_f3Fsp17x6HQK0xQgDQEELoTuERO4SsWV.jpg'; // Установите URL изображения
-    final criteria = ['Критерий 1', 'Критерий 2'];
-    final categories = ['Категория 1', 'Категория 2'];
-    final creator = 'Гений';
-    ProjectWidget newProject;
-    newProject = ProjectWidget(
-      projectName: projectName,
-      projectAvatarUrl: imageUrl,
-      projectDescription: projectDescription,
-      criteria: criteria,
-      categories: categories,
-      creator: creator,
-      onDelete: () {},
-    );
-    return newProject;
-  }
-
-
-
   Future<void> loadMyProjects() async {
     await loadUserData();
 
@@ -97,16 +77,14 @@ class _MenuTabState extends State<MenuTab> {
         .where('creator', isEqualTo: username)
         .get();
 
-    if (mounted) { // Проверка, что виджет все еще существует
-      for (var projectDoc in myProjectsSnapshot.docs) {
-        final data = projectDoc.data();
-        final projectWidget = ProjectWidget.fromData(data);
-        setState(() {
-          myProjects.add(projectWidget);
-        });
-      }
+    for (var projectDoc in myProjectsSnapshot.docs) {
+      final data = projectDoc.data();
+      final projectWidget = ProjectWidget.fromData(data);
+      setState(() {
+        myProjects.add(projectWidget);
+      });
     }
-  }
+    }
 
   Future<void> loadOtherProjects() async {
     await loadUserData();
@@ -116,14 +94,26 @@ class _MenuTabState extends State<MenuTab> {
         .where('creator', isNotEqualTo: username)
         .get();
 
+    // Очистка списка otherProjects перед добавлением новых данных
+    setState(() {
+      otherProjects.clear();
+    });
+
     for (var projectDoc in otherProjectsSnapshot.docs) {
       final data = projectDoc.data();
-      final projectWidget = ProjectWidget.fromData(data);
+      final projectWidget = ProjectWidget(
+        projectName: data['name'],
+        projectDescription: data['description'],
+        projectAvatarUrl: data['avatarUrl'],
+        creator: data['creator'],
+        criteria: List<String>.from(data['criteria']),
+        categories: List<String>.from(data['categories']),
+      );
       setState(() {
         otherProjects.add(projectWidget);
       });
     }
-  }
+    }
 
 
 
@@ -336,69 +326,45 @@ class _MenuTabState extends State<MenuTab> {
 
   void createProject(String projectName, String projectDescription, String imageUrl, List<String> criteria, List<String> categories) {
     // Add the created project to the list and display it
-    ProjectWidget? newProject;
-    newProject = ProjectWidget(
-        projectName: projectName,
-        projectAvatarUrl: imageUrl,
-        projectDescription: projectDescription,
-        criteria: criteria,
-        categories: categories,
-        creator: username,
-        onDelete: () {
-          // Удаление проекта из списка и Firestore по имени
-          deleteProjectByName(projectName);
-          setState(() {
-            projects.remove(newProject);
-            myProjects.remove(newProject); // Удалите из myProjects
-          });
-        });
+    final newProject = ProjectWidget(
+      projectName: projectName,
+      projectDescription: projectDescription,
+      projectAvatarUrl: imageUrl,
+      criteria: criteria,
+      categories: categories,
+      creator: username,
+    );
     setState(() {
-      projects.add(newProject!);
-      myProjects.add(newProject); // Добавьте в myProjects
+      projects.add(newProject);
     });
 
+    // Save project data to Firestore or perform other actions as needed
     FirebaseFirestore.instance.collection('projects').add({
       'name': projectName,
       'description': projectDescription,
-      'criteria': criteria,
       'avatarUrl': imageUrl,
+      'criteria': criteria,
       'categories': categories,
       'creator': username,
     });
   }
-
-  void deleteProjectByName(String projectName) {
-    // Удаление проекта из Firestore по имени
-    FirebaseFirestore.instance.collection('projects').where('name', isEqualTo: projectName).get().then((querySnapshot) {
-      querySnapshot.docs.forEach((document) {
-        document.reference.delete();
-      });
-
-    });
-  }
-
-
-
-
 }
 
-class ProjectWidget extends StatefulWidget {
+class ProjectWidget extends StatelessWidget {
   final String projectName;
   final String projectDescription;
   final String projectAvatarUrl;
   final List<String> criteria;
   final List<String> categories;
   final String creator;
-  final VoidCallback onDelete;
 
   ProjectWidget({
     required this.projectName,
     required this.projectDescription,
+    required this.projectAvatarUrl,
     required this.criteria,
     required this.categories,
-    required this.projectAvatarUrl,
     required this.creator,
-    required this.onDelete,
   });
 
   static ProjectWidget fromData(Map<String, dynamic> data) {
@@ -409,109 +375,8 @@ class ProjectWidget extends StatefulWidget {
       criteria: List<String>.from(data['criteria']),
       categories: List<String>.from(data['categories']),
       creator: data['creator'],
-      onDelete: () {},
     );
   }
-
-  @override
-  _ProjectWidgetState createState() => _ProjectWidgetState();
-}
-
-class _ProjectWidgetState extends State<ProjectWidget> {
-  bool isCurrentUserProject = false; // Флаг, указывающий, является ли пользователь создателем проекта
-  String? username;
-
-  @override
-  void initState() {
-    super.initState();
-
-    loadUserData().then((loadedUsername) {
-      if (loadedUsername != null && widget.creator == loadedUsername) {
-        setState(() {
-          isCurrentUserProject = true;
-          username = loadedUsername;
-        });
-      }
-    });
-  }
-
-  Future<String?> loadUserData() async {
-    final currentUserEmail = FirebaseAuth.instance.currentUser?.email;
-
-    if (currentUserEmail != null) {
-      final userSnapshot = await FirebaseFirestore.instance.collection('users').doc(currentUserEmail).get();
-
-      if (userSnapshot.exists) {
-        final userData = userSnapshot.data() as Map<String, dynamic>;
-        final userUsername = userData['username'];
-        return userUsername;
-      }
-    }
-
-    return null; // Возвращаем null, если не удалось получить username.
-  }
-
-  Future<void> _submitApplication(String projectName, String skills, String experience, String telegram) async {
-
-    final currentUserEmail = FirebaseAuth.instance.currentUser;
-
-    await FirebaseFirestore.instance.collection('applications').add({
-      'projectName': projectName,
-      'applicantEmail': currentUserEmail,
-      'skills': skills,
-      'experience': experience,
-      'telegram': telegram,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-  }
-
-
-  Future<void> _showCreateApplicationDialog(String projectName) async {
-    String skills = '';
-    String experience = '';
-    String telegram = '';
-
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Подать заявку'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              TextField(
-                onChanged: (value) {
-                  skills = value;
-                },
-                decoration: InputDecoration(labelText: 'Навыки'),
-              ),
-              TextField(
-                onChanged: (value) {
-                  experience = value;
-                },
-                decoration: InputDecoration(labelText: 'Опыт работы'),
-              ),
-              TextField(
-                onChanged: (value) {
-                  telegram = value;
-                },
-                decoration: InputDecoration(labelText: 'Телеграмм'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _submitApplication(projectName, skills, experience, telegram);
-                  Navigator.of(context).pop();
-                },
-                child: Text('Отправить заявку'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -522,18 +387,18 @@ class _ProjectWidgetState extends State<ProjectWidget> {
         children: [
           CircleAvatar(
             radius: 50.0,
-            backgroundImage: NetworkImage(widget.projectAvatarUrl),
+            backgroundImage: NetworkImage(projectAvatarUrl),
             backgroundColor: Colors.transparent,
           ),
-          Text('Creator: ${widget.creator}'),
+          Text('Creator: $creator'),
           ListTile(
-            title: Text(widget.projectName),
-            subtitle: Text(widget.projectDescription),
+            title: Text(projectName),
+            subtitle: Text(projectDescription),
           ),
           Row(
             children: [
               Text('Требуется: '),
-              for (var criterion in widget.criteria)
+              for (var criterion in criteria)
                 Chip(
                   label: Text(criterion),
                 ),
@@ -542,24 +407,12 @@ class _ProjectWidgetState extends State<ProjectWidget> {
           Row(
             children: [
               Text('Категории: '),
-              for (var category in widget.categories)
+              for (var category in categories)
                 Chip(
                   label: Text(category),
                 ),
             ],
           ),
-          if (!isCurrentUserProject)
-            ElevatedButton(
-              onPressed: () {
-                _showCreateApplicationDialog(widget.projectName);
-              },
-              child: Text('Подать заявку'),
-            ),
-          if (isCurrentUserProject)
-            ElevatedButton(
-              onPressed: widget.onDelete,
-              child: Text('Удалить'),
-            ),
         ],
       ),
     );

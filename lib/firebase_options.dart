@@ -17,7 +17,10 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError(
+        'DefaultFirebaseOptions have not been configured for web - '
+        'you can reconfigure this by running the FlutterFire CLI again.',
+      );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -25,7 +28,10 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -43,21 +49,12 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDoNZsMzHjaqvNWa1HjMxeISn3Mksx6ZIo',
-    appId: '1:63417815638:web:40cdfb1dc7eca04ae861f7',
-    messagingSenderId: '63417815638',
-    projectId: 'team-it-e6c00',
-    authDomain: 'team-it-e6c00.firebaseapp.com',
-    storageBucket: 'team-it-e6c00.appspot.com',
-    measurementId: 'G-TTDP197B9F',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDnta9an-MGC_-UQ21g2sa6Pq7YhpzaBL4',
     appId: '1:63417815638:android:c6a6ea773f45ad02e861f7',
     messagingSenderId: '63417815638',
     projectId: 'team-it-e6c00',
+    databaseURL: 'https://team-it-e6c00-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'team-it-e6c00.appspot.com',
   );
 
@@ -66,16 +63,8 @@ class DefaultFirebaseOptions {
     appId: '1:63417815638:ios:8a35c375dae3d6a7e861f7',
     messagingSenderId: '63417815638',
     projectId: 'team-it-e6c00',
+    databaseURL: 'https://team-it-e6c00-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'team-it-e6c00.appspot.com',
     iosBundleId: 'com.example.untitled2',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCbBSHZ13_N47FzvZMOzbBKj77LsQYgO3A',
-    appId: '1:63417815638:ios:5e03eeb3f56dba71e861f7',
-    messagingSenderId: '63417815638',
-    projectId: 'team-it-e6c00',
-    storageBucket: 'team-it-e6c00.appspot.com',
-    iosBundleId: 'com.example.untitled2.RunnerTests',
   );
 }
