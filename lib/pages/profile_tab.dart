@@ -161,44 +161,74 @@ class _ProfileTabState extends State<ProfileTab> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Редактировать профиль'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: <Widget>[
-                TextFormField(
-                  controller: aboutMeController,
-                  decoration: InputDecoration(labelText: 'О себе'),
-                  keyboardType: TextInputType.text,
-                ),
-                TextFormField(
-                  controller: skillsController,
-                  decoration: InputDecoration(labelText: 'Навыки'),
-                  keyboardType: TextInputType.text,
-                ),
-                TextFormField(
-                  controller: experienceController,
-                  decoration: InputDecoration(labelText: 'Опыт'),
-                  keyboardType: TextInputType.text,
-                ),
-              ],
+        return Dialog(
+          backgroundColor: Color(0xFF11FFE2), // Цвет фона
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Column(
+                children: <Widget>[
+                  TextFormField(
+                    controller: aboutMeController,
+                    decoration: InputDecoration(labelText: 'О себе'),
+                    keyboardType: TextInputType.text,
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: skillsController,
+                    decoration: InputDecoration(labelText: 'Навыки'),
+                    keyboardType: TextInputType.text,
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: experienceController,
+                    decoration: InputDecoration(labelText: 'Опыт'),
+                    keyboardType: TextInputType.text,
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(
+                          'Отмена',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          primary: Color(0xFFBE9DE8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          _saveProfileData();
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(
+                          'Сохранить',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          primary: Color(0xFFBE9DE8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Отмена'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Сохранить'),
-              onPressed: () {
-                _saveProfileData();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
         );
       },
     );

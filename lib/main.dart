@@ -10,17 +10,8 @@ void main() async{
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  print("TTT 123");
-  FirebaseFirestore.instance.collection('projects').add({
-    'name': 'Название проекта',
-    'description': 'Описание проекта',
-    'creator': 'Имя создателя',
-    // Другие поля и данные, которые вы хотите добавить
-  }).then((DocumentReference document) {
-    print('TTT SUCCES555 Данные успешно добавлены с идентификатором: ${document.id}');
-  }).catchError((error) {
-    print('TTT ERROR555 Ошибка при добавлении данных: $error');
-  });
+
+
   runApp(const MyApp());
 
 

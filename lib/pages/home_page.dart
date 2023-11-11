@@ -20,10 +20,14 @@ class _HomePageState extends State<HomePage> {
     MessengerTab()
   ];
 
-  final Map<String, Icon> _navigationItems = {
-    'Profile': Icon(Icons.person),
-    'Menu': Platform.isIOS ? Icon(CupertinoIcons.house_fill) : Icon(Icons.home),
-    'Messenger': Icon(Icons.message)
+  final Map<String, dynamic> _navigationItems = {
+    'Profile': Icons.person,
+    'Menu': Platform.isIOS ? CupertinoIcons.house_fill : CustomMenuIcon(
+      width: 31.0,
+      height: 31.0,
+      imagePath: 'lib/assets/images/menu.png', // Путь к изображению меню
+    ),
+    'Messenger': Icons.message,
   };
 
   void _loadScreen() {
@@ -35,6 +39,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Team IT'),
+        backgroundColor: Color(0xFFBE9DE8),
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
@@ -46,40 +51,45 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: _pages[_currentIndex],
-      bottomNavigationBar: Platform.isIOS
-          ? CupertinoTabBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-          _loadScreen();
-        },
-        items: _navigationItems.entries
-            .map<BottomNavigationBarItem>(
-              (entry) => BottomNavigationBarItem(
-            icon: entry.value,
-            label: entry.key,
+      bottomNavigationBar: Container(
+        height: 66,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
           ),
-        )
-            .toList(),
-      )
-          : BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-          _loadScreen();
-        },
-        items: _navigationItems.entries
-            .map<BottomNavigationBarItem>(
-              (entry) => BottomNavigationBarItem(
-            icon: entry.value,
-            label: entry.key,
-          ),
-        )
-            .toList(),
+          color: Colors.white
+          , // Цвет фона
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: _navigationItems.entries.map<Widget>((entry) {
+            return Container(
+              width: 66,
+              height: 66,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                color: Colors.white, // Цвет фона
+              ),
+              child: IconButton(
+                icon: entry.value is IconData
+                    ? Icon(entry.value)
+                    : entry.value,
+                onPressed: () {
+                  setState(() => _currentIndex = _navigationItems.keys.toList().indexOf(entry.key));
+                  _loadScreen();
+                },
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 }
+
+
+
 
 class TabContent extends StatelessWidget {
   final String title;
@@ -93,3 +103,40 @@ class TabContent extends StatelessWidget {
     );
   }
 }
+
+class CustomMenuIcon extends StatelessWidget {
+  final double width;
+  final double height;
+  final String imagePath; // Путь к изображению меню
+
+  CustomMenuIcon({
+    required this.width,
+    required this.height,
+    required this.imagePath, // Добавленный параметр для пути к изображению
+  });
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Container(
+      width: 90,
+      height: 35,
+      decoration: BoxDecoration(
+        color: Color(0xFF9D69DE), // Цвет фона
+        borderRadius: BorderRadius.circular(25.0),
+      ),
+      child: Center(
+        child: Image.asset(
+          imagePath,
+          width: width,
+          height: height,
+          fit: BoxFit.contain, // Используйте BoxFit.contain для вписывания изображения в контейнер
+        ),
+      ),
+    );
+  }
+}
+
+
+
+

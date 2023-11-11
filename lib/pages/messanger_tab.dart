@@ -1,5 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class MessengerTab extends StatefulWidget {
@@ -8,51 +8,54 @@ class MessengerTab extends StatefulWidget {
 }
 
 class _MessengerTabState extends State<MessengerTab> {
-  List<Application> testApplications = [];
+  List<Application> userApplications = [];
 
   @override
   void initState() {
     super.initState();
-
-    // Создайте тестовую заявку и добавьте ее в список
-    final testApplication = Application(
-      skills: 'Тута навыки',
-      experience: 'А тут опыт работы',
-      telegram: 'Типо  Телеграм',
-    );
-
-
-    testApplications.add(testApplication);
+    fetchUserApplications();
   }
 
-  Future<void> fetchApplications() async {
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('Applications')
+  Future<void> fetchUserApplications() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return;
+    }
+
+    final userData = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: user.email)
+        .get();
+
+      final username = userData.docs.first['username'];
+
+      final applicationsQuery = await FirebaseFirestore.instance
+          .collection('applications')
+          .where('projectCreatorName', isEqualTo: username)
           .get();
 
-      final applications = querySnapshot.docs
+      final List<Application> fetchedApplications = applicationsQuery.docs
           .map((doc) => Application(
-          skills: doc['skills'],
-          experience: doc['experience'],
-          telegram: doc['telegram']))
+        skills: doc['skills'],
+        experience: doc['experience'],
+        telegram: doc['telegram'],
+      ))
           .toList();
 
       setState(() {
-        testApplications = applications;
+        userApplications = fetchedApplications;
       });
-    } catch (e) {
-      print('Error fetching applications: $e');
-    }
+
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ApplicationsList(applications: testApplications), // Отображение списка заявок
+      body: ApplicationsList(applications: userApplications),
     );
   }
 }
+
 
 class Application {
   final String skills;
@@ -88,8 +91,8 @@ class ApplicationsList extends StatelessWidget {
             title: Text(
               'Навыки: ${application.skills}',
               style: TextStyle(
-                color: Colors.black, // Черный цвет текста
-                fontSize: 16.0, // Размер шрифта
+                color: Colors.black,
+                fontSize: 16.0,
               ),
             ),
             subtitle: Column(
@@ -98,22 +101,21 @@ class ApplicationsList extends StatelessWidget {
                 Text(
                   'Опыт работы: ${application.experience}',
                   style: TextStyle(
-                    color: Colors.black, // Черный цвет текста
-                    fontSize: 16.0, // Размер шрифта
+                    color: Colors.black,
+                    fontSize: 16.0,
                   ),
                 ),
                 Text(
                   'Телеграмм: ${application.telegram}',
                   style: TextStyle(
-                    color: Colors.black, // Черный цвет текста
-                    fontSize: 16.0, // Размер шрифта
+                    color: Colors.black,
+                    fontSize: 16.0,
                   ),
                 ),
               ],
             ),
           ),
         );
-
       },
     );
   }

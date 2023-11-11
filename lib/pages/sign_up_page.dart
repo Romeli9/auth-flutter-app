@@ -4,7 +4,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:untitled2/class_user.dart';
 
-
 class SignUp extends StatefulWidget {
   final void Function()? onPressed;
 
@@ -22,7 +21,7 @@ class _SignUpPageState extends State<SignUp> {
   final TextEditingController _password = TextEditingController();
   final TextEditingController _username = TextEditingController();
 
-  Future<void> createUserWithEmailAndPassword() async {
+  createUserWithEmailAndPassword() async {
     try {
       setState(() {
         isLoading = true;
@@ -37,8 +36,9 @@ class _SignUpPageState extends State<SignUp> {
       final storageRef = FirebaseStorage.instance.ref().child('avatars/no-avatar.png');
       final downloadURL = await storageRef.getDownloadURL();
 
-      // Function to save user data in Firestore with retry
-      await saveUserDataWithRetry(downloadURL);
+      // Save user data, including username and image URL, in Firestore
+      final user = Users(email: _email.text, username: _username.text, image: downloadURL);
+      await FirebaseFirestore.instance.collection('users').doc(_email.text).set(user.toJson());
 
       setState(() {
         isLoading = false;
@@ -67,33 +67,16 @@ class _SignUpPageState extends State<SignUp> {
     }
   }
 
-  // Function to save user data in Firestore with retry
-  Future<void> saveUserDataWithRetry(String downloadURL) async {
-    for (int i = 0; i < 5; i++) {
-      try {
-        final user = Users(email: _email.text, username: _username.text, image: downloadURL);
-        print('я начал');
-        await FirebaseFirestore.instance.collection('users').doc(_email.text).set(user.toJson());
-        print('я закончил');
-        return;
-      } catch (e) {
-        // Handle the error (e.g., log or show a message)
-        print('Error saving user data: $e');
-      }
-      // Add a delay before the next retry (you can adjust this as needed)
-      await Future.delayed(Duration(seconds: 1));
-    }
-    // Handle the case when all retries fail
-    print('Failed to save user data after 3 retries.');
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text("Sign Up"),
+        title: Text(
+          "Sign Up",
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFFBE9DE8),
       ),
       body: Center(
         child: Padding(
@@ -116,7 +99,7 @@ class _SignUpPageState extends State<SignUp> {
                   ),
                 ),
                 TextFormField(
-                  controller: _username, // Add username field
+                  controller: _username,
                   validator: (text) {
                     if (text == null || text.isEmpty) {
                       return "Username is empty";
@@ -148,6 +131,13 @@ class _SignUpPageState extends State<SignUp> {
                         createUserWithEmailAndPassword();
                       }
                     },
+                    style: ElevatedButton.styleFrom(
+                      primary: const Color(0xFFBE9DE8),
+                      onPrimary: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
                     child: isLoading
                         ? const Center(
                       child: CircularProgressIndicator(
@@ -162,6 +152,13 @@ class _SignUpPageState extends State<SignUp> {
                   height: 45,
                   child: ElevatedButton(
                     onPressed: widget.onPressed,
+                    style: ElevatedButton.styleFrom(
+                      primary: const Color(0xFFBE9DE8),
+                      onPrimary: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
                     child: const Text("Login"),
                   ),
                 ),
