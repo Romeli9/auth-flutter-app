@@ -21,6 +21,10 @@ class _SignUpPageState extends State<SignUp> {
   final TextEditingController _password = TextEditingController();
   final TextEditingController _username = TextEditingController();
 
+  String emailError = '';
+  String usernameError = '';
+  String passwordError = '';
+
   createUserWithEmailAndPassword() async {
     try {
       setState(() {
@@ -42,28 +46,17 @@ class _SignUpPageState extends State<SignUp> {
 
       setState(() {
         isLoading = false;
+        emailError = '';
+        usernameError = '';
+        passwordError = '';
       });
     } catch (e) {
       setState(() {
         isLoading = false;
+        emailError = "Неправильная почта";
+        usernameError = '';
+        passwordError = '';
       });
-      if (e is FirebaseAuthException) {
-        if (e.code == 'weak-password') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("The password provided is too weak."),
-            ),
-          );
-        } else if (e.code == 'email-already-in-use') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("The account already exists for that email."),
-            ),
-          );
-        }
-      } else {
-        print(e);
-      }
     }
   }
 
@@ -94,8 +87,14 @@ class _SignUpPageState extends State<SignUp> {
                     }
                     return null;
                   },
-                  decoration: const InputDecoration(
+                  onChanged: (text) {
+                    setState(() {
+                      emailError = ''; // Сбрасываем ошибку при изменении текста
+                    });
+                  },
+                  decoration: InputDecoration(
                     labelText: "Email",
+                    errorText: emailError.isNotEmpty ? emailError : null,
                   ),
                 ),
                 TextFormField(
@@ -106,8 +105,14 @@ class _SignUpPageState extends State<SignUp> {
                     }
                     return null;
                   },
-                  decoration: const InputDecoration(
+                  onChanged: (text) {
+                    setState(() {
+                      usernameError = ''; // Сбрасываем ошибку при изменении текста
+                    });
+                  },
+                  decoration: InputDecoration(
                     labelText: "Username",
+                    errorText: usernameError.isNotEmpty ? usernameError : null,
                   ),
                 ),
                 TextFormField(
@@ -118,8 +123,14 @@ class _SignUpPageState extends State<SignUp> {
                     }
                     return null;
                   },
-                  decoration: const InputDecoration(
+                  onChanged: (text) {
+                    setState(() {
+                      passwordError = ''; // Сбрасываем ошибку при изменении текста
+                    });
+                  },
+                  decoration: InputDecoration(
                     labelText: "Password",
+                    errorText: passwordError.isNotEmpty ? passwordError : null,
                   ),
                 ),
                 SizedBox(

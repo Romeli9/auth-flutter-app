@@ -17,6 +17,8 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
 
+  String loginError = '';
+
   signInWithEmailAndPassword() async {
     try {
       setState(() {
@@ -29,20 +31,13 @@ class _LoginPageState extends State<LoginPage> {
       );
       setState(() {
         isLoading = false;
+        loginError = ''; // Сбрасываем ошибку
       });
     } on FirebaseAuthException catch (e) {
       setState(() {
         isLoading = false;
+        loginError = "Неправильный логин или пароль";
       });
-      if (e.code == 'user-not-found') {
-        return ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("No user found for that email.")),
-        );
-      } else if (e.code == 'wrong-password') {
-        return ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Wrong password provided for that user.")),
-        );
-      }
     }
   }
 
@@ -73,7 +68,15 @@ class _LoginPageState extends State<LoginPage> {
                     }
                     return null;
                   },
-                  decoration: const InputDecoration(labelText: "Email"),
+                  onChanged: (text) {
+                    setState(() {
+                      loginError = ''; // Сбрасываем ошибку при изменении текста
+                    });
+                  },
+                  decoration: InputDecoration(
+                    labelText: "Email",
+                    errorText: loginError.isNotEmpty ? loginError : null,
+                  ),
                 ),
                 TextFormField(
                   controller: _password,
@@ -83,7 +86,15 @@ class _LoginPageState extends State<LoginPage> {
                     }
                     return null;
                   },
-                  decoration: const InputDecoration(labelText: "Password"),
+                  onChanged: (text) {
+                    setState(() {
+                      loginError = ''; // Сбрасываем ошибку при изменении текста
+                    });
+                  },
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    errorText: loginError.isNotEmpty ? loginError : null,
+                  ),
                 ),
                 SizedBox(
                   width: double.infinity,
